@@ -148,7 +148,7 @@
 7. **`run-phase2-migration.js`** - Migration runner
 
 ### Documentation (2 files)
-8. **`.kiro/specs/PHASE_2_REQUIREMENTS.md`** - Detailed requirements
+8. **`docs/specs/PHASE_2_REQUIREMENTS.md`** - Detailed requirements
 9. **`PHASE_2_COMPLETE_SUMMARY.md`** - This document
 
 **Total Lines of Code**: 2,800+  

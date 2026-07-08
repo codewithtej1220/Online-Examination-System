@@ -215,9 +215,9 @@ node test-phase1-complete.js
 
 Complete documentation available:
 - `PHASE_1_README.md` - Complete user guide
-- `.kiro/specs/PHASE_1_REQUIREMENTS.md` - Detailed requirements
-- `.kiro/specs/PHASE_1_COMPLETE.md` - Completion report
-- `.kiro/specs/IMPLEMENTATION_STATUS.md` - Progress tracking
+- `docs/specs/PHASE_1_REQUIREMENTS.md` - Detailed requirements
+- `docs/specs/PHASE_1_COMPLETE.md` - Completion report
+- `docs/specs/IMPLEMENTATION_STATUS.md` - Progress tracking
 
 ---
 

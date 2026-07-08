@@ -37,11 +37,11 @@ python main.py
 
 ---
 
-## Using VS Code / Kiro (Your Current Setup)
+## Using VS Code / IDE (Your Current Setup)
 
 ### All Three Servers at Once:
 ```javascript
-// In Kiro/VS Code terminal, run these in separate terminals:
+// In your IDE terminal, run these in separate terminals:
 
 // Terminal 1
 node server.js
@@ -53,10 +53,10 @@ npm run client:dev
 cd ai-service && python main.py
 ```
 
-### Or Use Kiro's Process Management:
-Kiro can start processes automatically - just run:
+### Or Use Your IDE's Process Management:
+Your IDE can start processes automatically - just run:
 ```
-control_pwsh_process with action="start" for each server
+Start each server in separate terminal windows
 ```
 
 ---

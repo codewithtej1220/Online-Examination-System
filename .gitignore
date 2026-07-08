@@ -184,3 +184,12 @@ npm-debug.log*
 # Explicitly keep .env ignored (already listed) and allow example env files
 .env
 
+# IDE and editor folders
+.vscode/
+.idea/
+.kiro/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db

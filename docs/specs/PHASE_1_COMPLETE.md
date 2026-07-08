@@ -117,8 +117,8 @@
 ### Testing & Documentation (4 files)
 10. **`test-phase1-complete.js`** - Comprehensive test script
 11. **`PHASE_1_README.md`** - Complete user guide
-12. **`.kiro/specs/PHASE_1_REQUIREMENTS.md`** - Detailed requirements
-13. **`.kiro/specs/IMPLEMENTATION_STATUS.md`** - Progress tracking
+12. **`docs/specs/PHASE_1_REQUIREMENTS.md`** - Detailed requirements
+13. **`docs/specs/IMPLEMENTATION_STATUS.md`** - Progress tracking
 
 ### Configuration (3 files)
 14. **`.env`** - Updated with proctoring URLs

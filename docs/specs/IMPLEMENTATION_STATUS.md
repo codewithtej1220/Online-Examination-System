@@ -126,9 +126,9 @@
 11. `PHASE_1_README.md`
 12. `PHASE_1_COMPLETE_SUMMARY.md`
 13. `QUICK_START_PHASE1.md`
-14. `.kiro/specs/PHASE_1_REQUIREMENTS.md`
-15. `.kiro/specs/PHASE_1_COMPLETE.md`
-16. `.kiro/specs/IMPLEMENTATION_STATUS.md`
+14. `docs/specs/PHASE_1_REQUIREMENTS.md`
+15. `docs/specs/PHASE_1_COMPLETE.md`
+16. `docs/specs/IMPLEMENTATION_STATUS.md`
 
 **Total Files Created**: 16  
 **Total Lines of Code**: 4,500+  
@@ -185,9 +185,9 @@
 ### Configuration & Documentation
 7. **`.env`** - Updated with proctoring service URLs
 8. **`proctoring-service/requirements.txt`** - Python dependencies
-9. **`proctoring-service/start-proctoring.bat`** - Windows startup script
+11. **`proctoring-service/start-proctoring.bat`** - Windows startup script
 10. **`PHASE_1_README.md`** - Complete Phase 1 documentation
-11. **`.kiro/specs/PHASE_1_REQUIREMENTS.md`** - Detailed requirements doc
+11. **`docs/specs/PHASE_1_REQUIREMENTS.md`** - Detailed requirements doc
 
 ### Dependencies Added
 - `socket.io` - Real-time communication
