@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 160 84% 39%;
+  --accent-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 239 84% 67%;
+  --radius: 0.5rem;
+  
+  /* Role-specific colors */
+  --admin-primary: 224 76% 48%;
+  --admin-secondary: 189 94% 43%;
+  --faculty-primary: 262 83% 58%;
+  --faculty-secondary: 330 81% 60%;
+  --student-primary: 160 84% 39%;
+  --student-secondary: 175 84% 32%;
+  
+  /* Semantic colors */
+  --success: 142 76% 36%;
+  --warning: 38 92% 50%;
+  --error: 0 84% 60%;
+  --info: 199 89% 48%;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: 222 84% 5%;
+  --foreground: 210 40% 98%;
+  --card: 217 33% 17%;
+  --card-foreground: 210 40% 98%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 215 28% 17%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 160 84% 39%;
+  --accent-foreground: 0 0% 100%;
+  --border: 215 25% 27%;
+  --input: 215 25% 27%;
+  --ring: 239 84% 67%;
+  
+  /* Role-specific colors for dark mode */
+  --admin-primary: 217 91% 60%;
+  --admin-secondary: 189 94% 43%;
+  --faculty-primary: 262 83% 65%;
+  --faculty-secondary: 330 81% 65%;
+  --student-primary: 160 84% 39%;
+  --student-secondary: 175 84% 45%;
+  
+  /* Semantic colors for dark mode */
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
+  --error: 0 72% 51%;
+  --info: 199 89% 48%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 5%, rgba(99, 102, 241, 0.12), transparent 28%),
+    radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.1), transparent 26%),
+    hsl(var(--background));
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Custom Utility Classes */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.dark .glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gradient-admin {
+  background: linear-gradient(135deg, hsl(var(--admin-primary)), hsl(var(--admin-secondary)));
+}
+
+.gradient-faculty {
+  background: linear-gradient(135deg, hsl(var(--faculty-primary)), hsl(var(--faculty-secondary)));
+}
+
+.gradient-student {
+  background: linear-gradient(135deg, hsl(var(--student-primary)), hsl(var(--student-secondary)));
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Progress Bar Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Smooth Focus Styles */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 4px;
+}

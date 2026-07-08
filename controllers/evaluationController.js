@@ -35,8 +35,12 @@ exports.submitExam = (req, res) => {
 
         if (rows[0].status === "SUBMITTED") {
             return db.query(
-                "SELECT * FROM result WHERE attempt_id = ?",
-                [attempt_id],
+                `SELECT 
+                    r.*,
+                    (SELECT COUNT(*) FROM student_answers WHERE attempt_id = ?) as total_questions
+                FROM result r 
+                WHERE r.attempt_id = ?`,
+                [attempt_id, attempt_id],
                 (resultErr, resultRows) => {
                     if (resultErr) {
                         return res.status(500).json({
@@ -45,10 +49,19 @@ exports.submitExam = (req, res) => {
                         });
                     }
 
+                    if (resultRows.length === 0) {
+                        return res.status(400).json({
+                            success: false,
+                            message: "Exam was submitted but result not found. Please contact admin."
+                        });
+                    }
+
                     return res.json({
                         success: true,
                         message: "Exam already submitted",
-                        result: resultRows[0] || null
+                        score: resultRows[0].total_marks,
+                        total_questions: resultRows[0].total_questions,
+                        result: resultRows[0]
                     });
                 }
             );

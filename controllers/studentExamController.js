@@ -45,19 +45,20 @@ exports.getStudentExams = (req, res) => {
 
     const studentId = req.params.studentId;
 
+    // MODIFIED: Return ALL exams for testing (not just assigned ones)
+    // For production, use the original query with student_exam JOIN
     const sql = `
         SELECT
             e.exam_id,
             e.title,
             e.duration_minutes,
-            e.scheduled_time
-        FROM student_exam se
-        JOIN examination e
-        ON se.exam_id = e.exam_id
-        WHERE se.student_user_id = ?
+            e.scheduled_time,
+            e.faculty_user_id
+        FROM examination e
+        ORDER BY e.created_at DESC
     `;
 
-    db.query(sql, [studentId], (err, results) => {
+    db.query(sql, [], (err, results) => {
 
         if (err) {
             return res.status(500).json({

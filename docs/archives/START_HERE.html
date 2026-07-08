@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OES - Start Here</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .status.checking {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+        
+        .status.online {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        
+        .status.offline {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .status.checking .status-icon {
+            background: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status.online .status-icon {
+            background: #28a745;
+        }
+        
+        .status.offline .status-icon {
+            background: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .info-box li {
+            padding: 8px 0;
+            color: #666;
+        }
+        
+        .info-box li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .error-box {
+            background: #f8d7da;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .error-box h3 {
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+        
+        .error-box p {
+            color: #721c24;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Online Examination System</h1>
+        <p class="subtitle">Welcome! Let's check if everything is ready...</p>
+        
+        <div id="statusBox" class="status checking">
+            <div class="status-icon"></div>
+            <div>
+                <strong id="statusTitle">Checking server...</strong>
+                <div id="statusMessage">Please wait...</div>
+            </div>
+        </div>
+        
+        <a href="http://localhost:5000" id="launchBtn" class="btn" style="display: none;">
+            🚀 Launch Dashboard
+        </a>
+        
+        <div id="infoBox" class="info-box" style="display: none;">
+            <h3>System Ready!</h3>
+            <ul>
+                <li>Server is running on port 5000</li>
+                <li>Database is connected</li>
+                <li>All API endpoints are operational</li>
+            </ul>
+        </div>
+        
+        <div id="errorBox" class="error-box" style="display: none;">
+            <h3>⚠️ Server Not Responding</h3>
+            <p><strong>Please start the server:</strong></p>
+            <ol style="margin-left: 20px; margin-top: 10px;">
+                <li>Open PowerShell or Command Prompt</li>
+                <li>Navigate to project folder</li>
+                <li>Run: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">node server.js</code></li>
+                <li>Refresh this page</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        async function checkServer() {
+            const statusBox = document.getElementById('statusBox');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusMessage = document.getElementById('statusMessage');
+            const launchBtn = document.getElementById('launchBtn');
+            const infoBox = document.getElementById('infoBox');
+            const errorBox = document.getElementById('errorBox');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/health');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Server is online!
+                    statusBox.className = 'status online';
+                    statusTitle.textContent = '✅ Server Online!';
+                    statusMessage.textContent = 'Database: ' + data.data.database;
+                    launchBtn.style.display = 'block';
+                    infoBox.style.display = 'block';
+                    errorBox.style.display = 'none';
+                } else {
+                    throw new Error('Server responded but unhealthy');
+                }
+            } catch (error) {
+                // Server is offline
+                statusBox.className = 'status offline';
+                statusTitle.textContent = '❌ Server Offline';
+                statusMessage.textContent = 'Cannot connect to http://localhost:5000';
+                launchBtn.style.display = 'none';
+                infoBox.style.display = 'none';
+                errorBox.style.display = 'block';
+                
+                // Retry in 5 seconds
+                setTimeout(checkServer, 5000);
+            }
+        }
+        
+        // Check immediately and every 10 seconds
+        checkServer();
+        setInterval(checkServer, 10000);
+    </script>
+</body>
+</html>

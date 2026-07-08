@@ -1,0 +1,19 @@
+const mysql = require('mysql2/promise');
+require('dotenv').config();
+
+(async () => {
+  const conn = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  });
+  
+  const [faculty] = await conn.query('SELECT user_id, username FROM users WHERE role = "faculty" LIMIT 5');
+  console.log('Faculty users:', faculty);
+  
+  const [students] = await conn.query('SELECT user_id, username FROM users WHERE role = "student" LIMIT 5');
+  console.log('Student users:', students);
+  
+  await conn.end();
+})();

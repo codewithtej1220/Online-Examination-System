@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OES Diagnostic Tool</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #16213e;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #4ecca3;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #999;
+            margin-bottom: 30px;
+        }
+        .test-box {
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4ecca3;
+        }
+        .test-box h3 {
+            color: #4ecca3;
+            margin-bottom: 15px;
+        }
+        .test-result {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .btn {
+            background: #4ecca3;
+            color: #16213e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #45b393;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status.success { background: #4ecca3; color: #16213e; }
+        .status.error { background: #e74c3c; color: white; }
+        .status.pending { background: #f39c12; color: #16213e; }
+        code {
+            background: #1a1a2e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #4ecca3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 OES Diagnostic Tool</h1>
+        <p class="subtitle">Test your API connection and diagnose issues</p>
+        
+        <div class="test-box">
+            <h3>Test 1: Basic Connectivity</h3>
+            <p>Tests if the browser can reach the server at all.</p>
+            <button class="btn" onclick="testBasicConnectivity()">Run Test</button>
+            <div id="test1Result" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-box">
+            <h3>Test 2: Health API Endpoint</h3>
+            <p>Tests the <code>/api/health</code> endpoint that the dashboard uses.</p>
+            <button class="btn" onclick="testHealthEndpoint()">Run Test</button>
+            <div id="test2Result" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-box">
+            <h3>Test 3: CORS Check</h3>
+            <p>Tests if CORS is properly configured for cross-origin requests.</p>
+            <button class="btn" onclick="testCORS()">Run Test</button>
+            <div id="test3Result" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-box">
+            <h3>Test 4: Browser Information</h3>
+            <p>Shows information about your browser and environment.</p>
+            <button class="btn" onclick="showBrowserInfo()">Show Info</button>
+            <div id="test4Result" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-box">
+            <h3>Test 5: Network Timing</h3>
+            <p>Measures how long requests take to complete.</p>
+            <button class="btn" onclick="testTiming()">Run Test</button>
+            <div id="test5Result" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <button class="btn" onclick="runAllTests()" style="background: #e74c3c; margin-top: 20px;">🚀 Run All Tests</button>
+    </div>
+    
+    <script>
+        function show(id, content, status = '') {
+            const el = document.getElementById(id);
+            el.innerHTML = content + (status ? `<br><br>Status: <span class="status ${status}">${status.toUpperCase()}</span>` : '');
+            el.style.display = 'block';
+        }
+        
+        async function testBasicConnectivity() {
+            const resultId = 'test1Result';
+            show(resultId, 'Testing...', 'pending');
+            
+            try {
+                const start = Date.now();
+                const response = await fetch('http://localhost:5000/', {
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                const duration = Date.now() - start;
+                
+                const result = `✅ SUCCESS!
+                
+Status Code: ${response.status}
+Status Text: ${response.statusText}
+Response Time: ${duration}ms
+Content Type: ${response.headers.get('content-type')}
+Server Reachable: YES
+
+The server is responding to requests.`;
+                
+                show(resultId, result, 'success');
+            } catch (error) {
+                const result = `❌ FAILED!
+                
+Error: ${error.message}
+Error Type: ${error.name}
+
+Possible Causes:
+1. Server is not running
+2. Wrong port (should be 5000)
+3. Firewall blocking connection
+4. Network issue
+
+Solution: Check if server is running with:
+netstat -ano | findstr :5000`;
+                
+                show(resultId, result, 'error');
+            }
+        }
+        
+        async function testHealthEndpoint() {
+            const resultId = 'test2Result';
+            show(resultId, 'Testing...', 'pending');
+            
+            try {
+                const start = Date.now();
+                const response = await fetch('http://localhost:5000/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    cache: 'no-cache'
+                });
+                const duration = Date.now() - start;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                const result = `✅ SUCCESS!
+                
+Status Code: ${response.status}
+Response Time: ${duration}ms
+
+Response Data:
+${JSON.stringify(data, null, 2)}
+
+The /api/health endpoint is working correctly!
+Dashboard should show GREEN dot.`;
+                
+                show(resultId, result, 'success');
+            } catch (error) {
+                const result = `❌ FAILED!
+                
+Error: ${error.message}
+Error Type: ${error.name}
+
+This is the endpoint that updates the status dot.
+If this fails, the dot will stay orange.
+
+Possible Causes:
+1. Server not running
+2. Database not connected
+3. API route not configured
+4. CORS blocking request
+
+Check server console for errors.`;
+                
+                show(resultId, result, 'error');
+            }
+        }
+        
+        async function testCORS() {
+            const resultId = 'test3Result';
+            show(resultId, 'Testing...', 'pending');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/health', {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('access-control-allow-origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('access-control-allow-methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('access-control-allow-headers'),
+                };
+                
+                const result = `✅ CORS WORKING!
+                
+CORS Headers Received:
+${JSON.stringify(corsHeaders, null, 2)}
+
+Current Origin: ${window.location.origin}
+Request Mode: cors
+
+CORS is properly configured.
+Cross-origin requests are allowed.`;
+                
+                show(resultId, result, 'success');
+            } catch (error) {
+                const result = `❌ CORS BLOCKED!
+                
+Error: ${error.message}
+
+This means the browser is blocking requests
+due to Cross-Origin Resource Sharing policy.
+
+Current Page Origin: ${window.location.origin}
+API Origin: http://localhost:5000
+
+Solution: Server CORS must allow this origin.
+Check server.js CORS configuration.`;
+                
+                show(resultId, result, 'error');
+            }
+        }
+        
+        function showBrowserInfo() {
+            const resultId = 'test4Result';
+            
+            const info = `Browser Information:
+
+User Agent: ${navigator.userAgent}
+Platform: ${navigator.platform}
+Language: ${navigator.language}
+Online: ${navigator.onLine}
+Cookies Enabled: ${navigator.cookieEnabled}
+
+Page Information:
+Current URL: ${window.location.href}
+Protocol: ${window.location.protocol}
+Hostname: ${window.location.hostname}
+Port: ${window.location.port || '(default)'}
+Origin: ${window.location.origin}
+
+Screen: ${screen.width}x${screen.height}
+Window: ${window.innerWidth}x${window.innerHeight}`;
+            
+            show(resultId, info);
+        }
+        
+        async function testTiming() {
+            const resultId = 'test5Result';
+            show(resultId, 'Testing...', 'pending');
+            
+            const tests = [];
+            
+            for (let i = 1; i <= 5; i++) {
+                try {
+                    const start = performance.now();
+                    await fetch(`http://localhost:5000/api/health?_=${Date.now()}`, {
+                        cache: 'no-cache'
+                    });
+                    const duration = performance.now() - start;
+                    tests.push(`Test ${i}: ${duration.toFixed(2)}ms`);
+                } catch (error) {
+                    tests.push(`Test ${i}: FAILED (${error.message})`);
+                }
+            }
+            
+            const avg = tests
+                .map(t => parseFloat(t.match(/[\d.]+/)))
+                .filter(n => !isNaN(n))
+                .reduce((a, b, i, arr) => a + b / arr.length, 0);
+            
+            const result = `⏱️ Timing Results:
+
+${tests.join('\n')}
+
+Average Response Time: ${avg.toFixed(2)}ms
+
+${avg < 50 ? '✅ Excellent performance!' : 
+  avg < 100 ? '✅ Good performance' : 
+  avg < 200 ? '⚠️ Acceptable but could be better' : 
+  '❌ Slow response time'}`;
+            
+            show(resultId, result, avg < 200 ? 'success' : 'error');
+        }
+        
+        async function runAllTests() {
+            await testBasicConnectivity();
+            await new Promise(r => setTimeout(r, 500));
+            await testHealthEndpoint();
+            await new Promise(r => setTimeout(r, 500));
+            await testCORS();
+            await new Promise(r => setTimeout(r, 500));
+            showBrowserInfo();
+            await new Promise(r => setTimeout(r, 500));
+            await testTiming();
+        }
+    </script>
+</body>
+</html>

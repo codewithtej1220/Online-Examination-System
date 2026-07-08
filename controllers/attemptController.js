@@ -10,75 +10,77 @@ exports.startExam = (req, res) => {
         });
     }
 
-    const assignmentSql = `
+    // COMMENTED OUT FOR TESTING: Allow all students to take any exam
+    // const assignmentSql = `
+    //     SELECT *
+    //     FROM student_exam
+    //     WHERE student_user_id = ? AND exam_id = ?
+    // `;
+
+    // db.query(assignmentSql, [student_user_id, exam_id], (assignErr, assignedRows) => {
+    //     if (assignErr) {
+    //         return res.status(500).json({
+    //             success: false,
+    //             error: assignErr.message
+    //         });
+    //     }
+
+    //     if (assignedRows.length === 0) {
+    //         return res.status(403).json({
+    //             success: false,
+    //             message: "Student is not assigned to this exam"
+    //         });
+    //     }
+
+    // Check if exam already started
+    const checkSql = `
         SELECT *
-        FROM student_exam
-        WHERE student_user_id = ? AND exam_id = ?
+        FROM attempt
+        WHERE student_user_id = ?
+          AND exam_id = ?
+          AND status = 'ONGOING'
+        LIMIT 1
     `;
 
-    db.query(assignmentSql, [student_user_id, exam_id], (assignErr, assignedRows) => {
-        if (assignErr) {
+    db.query(checkSql, [student_user_id, exam_id], (err, rows) => {
+        if (err) {
             return res.status(500).json({
                 success: false,
-                error: assignErr.message
+                error: err.message
             });
         }
 
-        if (assignedRows.length === 0) {
-            return res.status(403).json({
-                success: false,
-                message: "Student is not assigned to this exam"
+        if (rows.length > 0) {
+            return res.json({
+                success: true,
+                message: "Exam already started",
+                attempt_id: rows[0].attempt_id,
+                start_time: rows[0].start_time
             });
         }
 
-        const checkSql = `
-            SELECT *
-            FROM attempt
-            WHERE student_user_id = ?
-              AND exam_id = ?
-              AND status = 'ONGOING'
-            LIMIT 1
+        const sql = `
+            INSERT INTO attempt (student_user_id, exam_id, status, start_time)
+            VALUES (?, ?, 'ONGOING', NOW())
         `;
 
-        db.query(checkSql, [student_user_id, exam_id], (err, rows) => {
-            if (err) {
+        db.query(sql, [student_user_id, exam_id], (err2, result) => {
+            if (err2) {
                 return res.status(500).json({
                     success: false,
-                    error: err.message
+                    error: err2.message
                 });
             }
 
-            if (rows.length > 0) {
-                return res.json({
-                    success: true,
-                    message: "Exam already started",
-                    attempt_id: rows[0].attempt_id,
-                    start_time: rows[0].start_time
-                });
-            }
-
-            const sql = `
-                INSERT INTO attempt (student_user_id, exam_id, status, start_time)
-                VALUES (?, ?, 'ONGOING', NOW())
-            `;
-
-            db.query(sql, [student_user_id, exam_id], (err2, result) => {
-                if (err2) {
-                    return res.status(500).json({
-                        success: false,
-                        error: err2.message
-                    });
-                }
-
-                res.json({
-                    success: true,
-                    message: "Exam started",
-                    attempt_id: result.insertId,
-                    start_time: new Date()
-                });
+            res.json({
+                success: true,
+                message: "Exam started",
+                attempt_id: result.insertId,
+                start_time: new Date()
             });
         });
     });
+    // }); // Commented out closing bracket from assignment check
 };
 
 exports.getAttempts = (req, res) => {

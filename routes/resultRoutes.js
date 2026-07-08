@@ -12,10 +12,17 @@ router.post(
 );
 
 
-// get results
+// get all results
 router.get(
     "/all",
     resultController.getResults
+);
+
+
+// get student results
+router.get(
+    "/student/:student_user_id",
+    resultController.getStudentResults
 );
 
 

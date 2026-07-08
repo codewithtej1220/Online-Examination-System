@@ -1,0 +1,177 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                  OES Pro - Quick Commands                     ║
+╚═══════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────┐
+│ FIRST TIME SETUP (Run Once)                                │
+└─────────────────────────────────────────────────────────────┘
+
+Double-click:  SETUP_FIRST_TIME.bat
+
+Or manually:
+1. npm install
+2. cd ai-service && pip install -r requirements.txt
+3. mysql -u root -p online_exam_system < schema.sql
+4. mysql -u root -p online_exam_system < schema-updates-ai.sql
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ START ALL SERVERS (Easy Way)                               │
+└─────────────────────────────────────────────────────────────┘
+
+Double-click:  START_ALL_SERVERS.bat
+
+Opens 3 terminals:
+- Backend (Express)
+- Frontend (React/Vite)  
+- AI Service (FastAPI)
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ MANUAL START (3 Separate Terminals)                        │
+└─────────────────────────────────────────────────────────────┘
+
+Terminal 1 - Backend:
+cd c:\Users\bhanu\OneDrive\Documents\Dbms_OES
+node server.js
+
+Terminal 2 - Frontend:
+cd c:\Users\bhanu\OneDrive\Documents\Dbms_OES
+npm run client:dev
+
+Terminal 3 - AI Service:
+cd c:\Users\bhanu\OneDrive\Documents\Dbms_OES\ai-service
+python main.py
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ ONE-LINE START (PowerShell - All at Once)                  │
+└─────────────────────────────────────────────────────────────┘
+
+Copy and paste this entire line:
+
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'c:\Users\bhanu\OneDrive\Documents\Dbms_OES'; node server.js"; Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'c:\Users\bhanu\OneDrive\Documents\Dbms_OES'; npm run client:dev"; Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'c:\Users\bhanu\OneDrive\Documents\Dbms_OES\ai-service'; python main.py"
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ STOP ALL SERVERS                                            │
+└─────────────────────────────────────────────────────────────┘
+
+Double-click:  STOP_ALL_SERVERS.bat
+
+Or press Ctrl+C in each terminal window
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ ACCESS URLS                                                 │
+└─────────────────────────────────────────────────────────────┘
+
+Main App:       http://localhost:5173/app/
+Backend API:    http://localhost:5000/api/
+AI Service:     http://localhost:8000
+API Docs:       http://localhost:8000/docs
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING                                             │
+└─────────────────────────────────────────────────────────────┘
+
+Port Already in Use:
+  netstat -ano | findstr :5000
+  taskkill /PID <PID> /F
+
+MySQL Not Running:
+  net start MySQL80
+
+Module Not Found (Python):
+  cd ai-service
+  pip install -r requirements.txt
+
+Module Not Found (Node):
+  npm install
+
+Clear Everything and Reinstall:
+  rm -rf node_modules package-lock.json
+  npm install
+  cd ai-service
+  pip install -r requirements.txt --force-reinstall
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ DEMO CREDENTIALS                                            │
+└─────────────────────────────────────────────────────────────┘
+
+Admin:
+  Username: admin1
+  Password: password123
+
+Faculty:
+  Username: faculty1
+  Password: password123
+
+Student:
+  Username: student1
+  Password: password123
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ USEFUL NPM COMMANDS                                         │
+└─────────────────────────────────────────────────────────────┘
+
+Install dependencies:     npm install
+Start frontend only:      npm run client:dev
+Build frontend:           npm run client:build
+Preview production:       npm run client:preview
+Run tests:                npm test
+Lint code:                npm run lint
+Format code:              npm run format
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ DEVELOPMENT TIPS                                            │
+└─────────────────────────────────────────────────────────────┘
+
+Hot Reload:
+  - Frontend: ✓ Automatic (Vite)
+  - Backend: ✗ Manual restart needed
+  - AI Service: ✗ Manual restart needed
+
+Enable Backend Auto-Reload:
+  npm install -g nodemon
+  nodemon server.js
+
+View Logs:
+  - Check each terminal window
+  - Backend logs: console output
+  - AI service logs: console output
+
+Database Changes:
+  mysql -u root -p online_exam_system
+  > SHOW TABLES;
+  > SELECT * FROM users;
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ PRODUCTION DEPLOYMENT                                       │
+└─────────────────────────────────────────────────────────────┘
+
+Build:
+  npm run client:build
+
+Deploy Backend:
+  NODE_ENV=production node server.js
+
+Using PM2:
+  npm install -g pm2
+  pm2 start server.js --name oes-backend
+  pm2 start "npm run client:dev" --name oes-frontend
+  pm2 save
+
+
+═══════════════════════════════════════════════════════════════
+
+For detailed instructions, see: RUN_INSTRUCTIONS.md
+For first-time setup help, see: AI_INTEGRATION_SETUP.md
+For troubleshooting, see: TROUBLESHOOTING.md (in each feature doc)
+
+═══════════════════════════════════════════════════════════════
