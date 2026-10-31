@@ -26,9 +26,11 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const { examId, studentId, attemptId } = req.body;
+    // Only numeric ids reach the filename, so request fields can never inject path segments
+    const toId = (value) => (/^\d+$/.test(String(value)) ? String(value) : 'unknown');
+    const { examId, attemptId } = req.body;
     const timestamp = Date.now();
-    const filename = `exam_${examId}_student_${studentId}_attempt_${attemptId}_${timestamp}.webm`;
+    const filename = `exam_${toId(examId)}_student_${toId(req.user.user_id)}_attempt_${toId(attemptId)}_${timestamp}.webm`;
     cb(null, filename);
   }
 });
@@ -49,9 +51,10 @@ const upload = multer({
 });
 
 // Upload video recording
-router.post('/upload-recording', upload.single('video'), async (req, res) => {
+router.post('/upload-recording', verifyToken, requireRole('student'), upload.single('video'), async (req, res) => {
   try {
-    const { examId, studentId, attemptId, sessionId } = req.body;
+    const { examId, attemptId, sessionId } = req.body;
+    const studentId = req.user.user_id;
     
     if (!req.file) {
       return ApiResponse.error(res, 'No video file uploaded', 400);
@@ -380,7 +383,7 @@ router.get('/analyze-answers/:attemptId', verifyToken, requireRole('faculty', 'a
     const answerAnalysis = require('../services/answerAnalysisService');
 
     // Get exam ID for the attempt
-    const attemptSql = `SELECT exam_id FROM exam_attempt WHERE attempt_id = ?`;
+    const attemptSql = `SELECT exam_id FROM attempt WHERE attempt_id = ?`;
     
     db.query(attemptSql, [attemptId], (error, results) => {
       if (error || results.length === 0) {

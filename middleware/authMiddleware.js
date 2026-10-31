@@ -83,8 +83,29 @@ const optionalAuth = (req, res, next) => {
     next();
 };
 
+/**
+ * Allow access when the route param matches the logged-in user,
+ * or when the user has one of the given (staff) roles.
+ * Usage: verifyToken, requireSelfOrRole('studentId', 'faculty', 'admin')
+ */
+const requireSelfOrRole = (paramName, ...roles) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return ApiResponse.unauthorized(res, "Authentication required");
+        }
+
+        if (Number(req.params[paramName]) === Number(req.user.user_id) || roles.includes(req.user.role)) {
+            return next();
+        }
+
+        logger.warn(`User ${req.user.user_id} attempted to access another user's data at ${req.originalUrl}`);
+        return ApiResponse.forbidden(res, "You can only access your own records");
+    };
+};
+
 module.exports = {
     verifyToken,
     requireRole,
+    requireSelfOrRole,
     optionalAuth
 };

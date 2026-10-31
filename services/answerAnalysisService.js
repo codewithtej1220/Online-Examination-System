@@ -20,7 +20,7 @@ function analyzeSubmissionTiming(attemptId, callback) {
       ea.started_at,
       TIMESTAMPDIFF(SECOND, ea.started_at, sa.answered_at) AS time_to_answer
     FROM student_answer sa
-    JOIN exam_attempt ea ON sa.attempt_id = ea.attempt_id
+    JOIN attempt ea ON sa.attempt_id = ea.attempt_id
     JOIN question q ON sa.question_id = q.question_id
     WHERE sa.attempt_id = ?
     ORDER BY sa.answered_at ASC
@@ -93,7 +93,7 @@ function compareStudentAnswers(examId, callback) {
       sa.answer_text,
       sa.answered_at
     FROM student_answer sa
-    JOIN exam_attempt ea ON sa.attempt_id = ea.attempt_id
+    JOIN attempt ea ON sa.attempt_id = ea.attempt_id
     WHERE ea.exam_id = ?
     ORDER BY sa.question_id, ea.student_user_id
   `;

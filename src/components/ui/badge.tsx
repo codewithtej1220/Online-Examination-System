@@ -14,6 +14,8 @@ const badgeVariants = cva(
           "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400",
         warning:
           "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+        destructive:
+          "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400",
         error:
           "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400",
         info:

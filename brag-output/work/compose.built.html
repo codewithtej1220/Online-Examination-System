@@ -1,0 +1,727 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: #060816; }
+  body { font-family: Inter, system-ui, sans-serif; color: #f1f5f9; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  canvas.full { position: absolute; inset: 0; }
+  .scene { position: absolute; inset: 0; display: none; }
+  .abs { position: absolute; }
+  .persp { position: absolute; perspective: 1700px; }
+  .ui { position: absolute; border-radius: 14px; overflow: hidden; box-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(148 163 184 / 0.14); transform-origin: center; will-change: transform, opacity; }
+  .ui img { display: block; width: 100%; height: 100%; }
+  .display { font-family: "Plus Jakarta Sans", Inter, sans-serif; font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; }
+  .wave-line { white-space: nowrap; }
+  .wave-line span { display: inline-block; will-change: transform, opacity; }
+  .grad { background: linear-gradient(90deg, #818cf8, #a78bfa 40%, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .grad span { background: inherit; -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .chip { display: inline-flex; align-items: center; gap: 12px; padding: 10px 18px 10px 12px; border-radius: 999px; background: rgb(99 102 241 / 0.12); border: 1px solid rgb(129 140 248 / 0.35); font: 600 22px Inter; color: #c7d2fe; }
+  .chip b { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: linear-gradient(135deg, #6366f1, #7c3aed); color: white; font-size: 15px; }
+  .title { font-size: 68px; }
+  .logo { width: 132px; height: 132px; border-radius: 34px; background: linear-gradient(135deg, #4f46e5, #7c3aed); display: grid; place-items: center; box-shadow: 0 30px 60px -20px rgb(99 102 241 / 0.7), inset 0 1px 0 rgb(255 255 255 / 0.25); }
+  .bubble { padding: 16px 22px; border-radius: 22px 22px 22px 6px; background: #f8fafc; color: #0f172a; font: 600 26px Inter; box-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.6); }
+  .mask { position: absolute; }
+  .cursor { position: absolute; width: 44px; height: 44px; z-index: 50; filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.5)); }
+  .ripple { position: absolute; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 999px; border: 3px solid rgb(165 180 252); z-index: 49; }
+  .rec { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 999px; background: rgb(15 23 42 / 0.9); border: 1px solid rgb(148 163 184 / 0.2); font: 600 20px Inter; }
+  .rec i { width: 11px; height: 11px; border-radius: 99px; background: #ef4444; box-shadow: 0 0 12px #ef4444; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="bg" class="full" width="1920" height="1080"></canvas>
+
+  <!-- 1. Hook -->
+  <div class="scene" id="s1">
+    <div class="abs display wave-line" id="hook1" style="left:0; right:0; top:330px; text-align:center; font-size:132px;">Paste your notes.</div>
+    <div class="abs display wave-line grad" id="hook2" style="left:0; right:0; top:500px; text-align:center; font-size:132px;">Get a proctored exam.</div>
+  </div>
+
+  <!-- 2. Reveal -->
+  <div class="scene" id="s2">
+    <div class="abs" id="s2logo" style="left:250px; top:300px;"><div class="logo">BOOK_ICON</div></div>
+    <div class="abs display wave-line" id="s2name" style="left:250px; top:470px; font-size:150px;">OES Pro</div>
+    <div class="abs display" id="s2tag" style="left:256px; top:660px; font-size:54px; font-weight:700; letter-spacing:-0.02em;">
+      <span class="wave-line" id="s2tagA">Exams, reimagined</span><br />
+      <span class="wave-line grad" id="s2tagB">for every classroom.</span>
+    </div>
+    <div class="abs bubble" id="s2bubble" style="left:1370px; top:250px;">Hi, I'm Ava!</div>
+  </div>
+
+  <!-- 3. Notes -> Questions -->
+  <div class="scene" id="s3">
+    <div class="abs" id="s3chip" style="left:372px; top:88px;"><span class="chip"><b>01</b>Notes → Questions</span></div>
+    <div class="abs display title wave-line" id="s3title" style="left:372px; top:150px;">Notes in. Questions out.</div>
+    <div class="persp" style="left:372px; top:290px; width:399px; height:684px;">
+      <div class="ui" id="s3notes" style="width:399px; height:684px;">
+        <img src="crops/notes.png" />
+        <div class="mask" id="s3toastMask" style="left:19px; top:600px; width:362px; height:70px; background:rgb(18 27 44);"></div>
+        <div class="mask" id="s3press" style="left:20px; top:548px; width:359px; height:42px; border-radius:12px; background:rgb(255 255 255 / 0.25); opacity:0;"></div>
+      </div>
+    </div>
+    <div class="persp" style="left:851px; top:290px; width:697px; height:720px;">
+      <div class="ui" id="s3q1" style="left:0; top:0; width:697px; height:163px;"><img src="crops/q1.png" /></div>
+      <div class="ui" id="s3q2" style="left:0; top:181px; width:697px; height:163px;"><img src="crops/q2.png" /></div>
+      <div class="ui" id="s3q3" style="left:0; top:362px; width:697px; height:163px;"><img src="crops/q3.png" /></div>
+      <div class="ui" id="s3q4" style="left:0; top:543px; width:697px; height:163px;"><img src="crops/q4.png" /></div>
+    </div>
+  </div>
+
+  <!-- 4. Proctoring -->
+  <div class="scene" id="s4">
+    <div class="abs" id="s4chip" style="left:372px; top:88px;"><span class="chip"><b>02</b>Proctored exams</span></div>
+    <div class="abs display title wave-line" id="s4title" style="left:372px; top:150px;">AI-proctored, start to finish.</div>
+    <div class="persp" style="left:512px; top:300px; width:896px; height:550px;">
+      <div class="ui" id="s4setup" style="width:896px; height:550px;">
+        <img src="crops/setup.png" />
+        <div class="mask" id="s4cam" style="left:21px; top:65px; width:419px; height:236px; border-radius:10px; overflow:hidden; background:radial-gradient(circle at 50% 42%, #1e293b, #070b16 70%); border:1px solid rgb(16 185 129 / 0.5);">
+          <svg class="abs" style="left:159px; top:58px;" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4.2"/><path d="M4 21c1.6-4 4.6-6 8-6s6.4 2 8 6"/></svg>
+          <div class="abs" id="s4scan" style="left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, #34d399, transparent); box-shadow:0 0 14px #34d399;"></div>
+          <div class="abs" style="right:10px; bottom:10px; padding:4px 10px; border-radius:8px; background:#10b981; font:600 13px Inter; color:white;">● Live</div>
+        </div>
+        <div class="mask" id="s4row0" style="left:456px; top:101px; width:419px; height:44px; border-radius:8px; opacity:0;"></div>
+        <div class="mask" id="s4row1" style="left:456px; top:157px; width:419px; height:44px; border-radius:8px; opacity:0;"></div>
+        <div class="mask" id="s4row2" style="left:456px; top:361px; width:419px; height:62px; border-radius:8px; opacity:0;"></div>
+      </div>
+    </div>
+    <div class="abs" id="s4rec" style="left:500px; top:262px;"><span class="rec"><i></i>Recording</span></div>
+    <div class="persp" style="left:500px; top:310px; width:920px; height:626px;">
+      <div class="ui" id="s4exam" style="width:920px; height:626px;">
+        <img src="crops/exam.png" />
+        <div class="mask" id="s4select" style="left:46px; top:172px; width:828px; height:66px; border-radius:12px; border:1.5px solid #6366f1; background:rgb(99 102 241 / 0.16); box-shadow:0 0 0 4px rgb(99 102 241 / 0.15); opacity:0;">
+          <div class="abs" style="left:16px; top:16px; width:32px; height:32px; border-radius:8px; background:#6366f1; color:white; font:700 13px Inter; display:grid; place-items:center;">A</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Grading + Ava -->
+  <div class="scene" id="s5">
+    <div class="abs" id="s5chip" style="left:391px; top:88px;"><span class="chip"><b>03</b>Instant results + Ava</span></div>
+    <div class="abs display title wave-line" id="s5title" style="left:391px; top:150px;">Graded instantly. Reviewed by Ava.</div>
+    <div class="abs display title" style="left:391px; top:150px; display:flex; gap:22px;">
+      <span class="wave-line" id="s5title2">Doubts?</span><span class="wave-line grad" id="s5title2b">Ask Ava.</span>
+    </div>
+    <div class="persp" style="left:391px; top:270px; width:1138px; height:146px;">
+      <div class="ui" id="s5result" style="width:1138px; height:146px;">
+        <img src="crops/result.png" />
+        <div class="mask" style="left:14px; top:14px; width:118px; height:118px; border-radius:999px; background:rgb(18 27 44);"></div>
+        <svg class="abs" style="left:23px; top:23px;" width="100" height="100" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#1e293b" stroke-width="8" />
+          <circle id="s5ring" cx="50" cy="50" r="44" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="filter:drop-shadow(0 0 6px #10b98188)" />
+        </svg>
+        <div class="abs" style="left:23px; top:50px; width:100px; text-align:center;">
+          <div id="s5pct" style="font:700 21px Inter; color:#f8fafc;">0%</div>
+          <div style="font:500 9px Inter; letter-spacing:0.08em; color:#94a3b8; margin-top:2px;">SCORE</div>
+        </div>
+      </div>
+    </div>
+    <div class="persp" style="left:1149px; top:450px; width:380px; height:532px;">
+      <div class="ui" id="s5review" style="width:380px; height:532px;"><img src="crops/avareview.png" /></div>
+      <div class="ui" id="s5chat" style="width:380px; height:532px;"><img src="crops/avachat.png" /></div>
+    </div>
+  </div>
+
+  <!-- 6. Outro -->
+  <div class="scene" id="s6">
+    <div class="abs" id="s6logo" style="left:930px; top:285px;"><div class="logo" style="width:104px; height:104px; border-radius:28px;">BOOK_ICON_SM</div></div>
+    <div class="abs display wave-line" id="s6name" style="left:1058px; top:290px; font-size:104px;">OES Pro</div>
+    <div class="abs display wave-line grad" id="s6line" style="left:930px; top:445px; font-size:72px;">Create · Proctor · Grade</div>
+    <div class="abs" id="s6sub" style="left:934px; top:560px; font:500 30px Inter; color:#cbd5e1;">Online exams with an AI study buddy.</div>
+    <div class="abs mono" id="s6url" style="left:934px; top:640px; font-size:24px; color:#a5b4fc; padding:12px 18px; border-radius:12px; background:rgb(99 102 241 / 0.1); border:1px solid rgb(129 140 248 / 0.3);">github.com/codewithtej1220/Online-Examination-System</div>
+  </div>
+
+  <canvas id="ava" class="abs" width="360" height="414" style="display:none;"></canvas>
+  <svg class="cursor" id="cursor" viewBox="0 0 24 24" style="display:none;"><path d="M4 2.5 L4 19.5 L8.6 15.3 L11.6 21.6 L14.6 20.2 L11.7 14.1 L18 13.8 Z" fill="white" stroke="#0f172a" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  <div class="ripple" id="ripple" style="display:none;"></div>
+  <canvas id="wipe" class="full" width="1920" height="1080"></canvas>
+</div>
+
+<script>
+const W = 1920, H = 1080;
+const BEATS = {"bpm": 120, "kicks": [4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 18.0], "cuts": [3.5, 6.0, 10.0, 14.0, 18.0], "clicks": [7.0, 13.0]};
+const AVA = {
+ "size": {
+  "width": 360,
+  "height": 414
+ },
+ "frames": [
+  {
+   "name": "ava-000.png",
+   "t": 0
+  },
+  {
+   "name": "ava-001.png",
+   "t": 0.212
+  },
+  {
+   "name": "ava-002.png",
+   "t": 0.266
+  },
+  {
+   "name": "ava-003.png",
+   "t": 0.324
+  },
+  {
+   "name": "ava-004.png",
+   "t": 0.393
+  },
+  {
+   "name": "ava-005.png",
+   "t": 0.453
+  },
+  {
+   "name": "ava-006.png",
+   "t": 0.506
+  },
+  {
+   "name": "ava-007.png",
+   "t": 0.561
+  },
+  {
+   "name": "ava-008.png",
+   "t": 0.614
+  },
+  {
+   "name": "ava-009.png",
+   "t": 0.662
+  },
+  {
+   "name": "ava-010.png",
+   "t": 0.715
+  },
+  {
+   "name": "ava-011.png",
+   "t": 0.775
+  },
+  {
+   "name": "ava-012.png",
+   "t": 0.84
+  },
+  {
+   "name": "ava-013.png",
+   "t": 0.889
+  },
+  {
+   "name": "ava-014.png",
+   "t": 0.963
+  },
+  {
+   "name": "ava-015.png",
+   "t": 1.015
+  },
+  {
+   "name": "ava-016.png",
+   "t": 1.056
+  },
+  {
+   "name": "ava-017.png",
+   "t": 1.108
+  },
+  {
+   "name": "ava-018.png",
+   "t": 1.158
+  },
+  {
+   "name": "ava-019.png",
+   "t": 1.21
+  },
+  {
+   "name": "ava-020.png",
+   "t": 1.259
+  },
+  {
+   "name": "ava-021.png",
+   "t": 1.302
+  },
+  {
+   "name": "ava-022.png",
+   "t": 1.354
+  },
+  {
+   "name": "ava-023.png",
+   "t": 1.408
+  },
+  {
+   "name": "ava-024.png",
+   "t": 1.467
+  },
+  {
+   "name": "ava-025.png",
+   "t": 1.524
+  },
+  {
+   "name": "ava-026.png",
+   "t": 1.571
+  },
+  {
+   "name": "ava-027.png",
+   "t": 1.612
+  },
+  {
+   "name": "ava-028.png",
+   "t": 1.67
+  },
+  {
+   "name": "ava-029.png",
+   "t": 1.719
+  },
+  {
+   "name": "ava-030.png",
+   "t": 1.78
+  },
+  {
+   "name": "ava-031.png",
+   "t": 1.822
+  },
+  {
+   "name": "ava-032.png",
+   "t": 1.875
+  },
+  {
+   "name": "ava-033.png",
+   "t": 1.925
+  },
+  {
+   "name": "ava-034.png",
+   "t": 1.981
+  },
+  {
+   "name": "ava-035.png",
+   "t": 2.026
+  },
+  {
+   "name": "ava-036.png",
+   "t": 2.079
+  },
+  {
+   "name": "ava-037.png",
+   "t": 2.139
+  },
+  {
+   "name": "ava-038.png",
+   "t": 2.188
+  },
+  {
+   "name": "ava-039.png",
+   "t": 2.244
+  },
+  {
+   "name": "ava-040.png",
+   "t": 2.293
+  },
+  {
+   "name": "ava-041.png",
+   "t": 2.342
+  },
+  {
+   "name": "ava-042.png",
+   "t": 2.393
+  },
+  {
+   "name": "ava-043.png",
+   "t": 2.45
+  },
+  {
+   "name": "ava-044.png",
+   "t": 2.504
+  },
+  {
+   "name": "ava-045.png",
+   "t": 2.548
+  },
+  {
+   "name": "ava-046.png",
+   "t": 2.6
+  },
+  {
+   "name": "ava-047.png",
+   "t": 2.651
+  },
+  {
+   "name": "ava-048.png",
+   "t": 2.703
+  },
+  {
+   "name": "ava-049.png",
+   "t": 2.762
+  },
+  {
+   "name": "ava-050.png",
+   "t": 2.814
+  },
+  {
+   "name": "ava-051.png",
+   "t": 2.865
+  },
+  {
+   "name": "ava-052.png",
+   "t": 2.918
+  },
+  {
+   "name": "ava-053.png",
+   "t": 2.968
+  },
+  {
+   "name": "ava-054.png",
+   "t": 3.022
+  },
+  {
+   "name": "ava-055.png",
+   "t": 3.069
+  },
+  {
+   "name": "ava-056.png",
+   "t": 3.123
+  },
+  {
+   "name": "ava-057.png",
+   "t": 3.176
+  }
+ ]
+};
+const BOOK = '<svg width="SIZE" height="SIZE" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>';
+document.body.innerHTML = document.body.innerHTML.replace("BOOK_ICON_SM", BOOK.replaceAll("SIZE", "58")).replace("BOOK_ICON", BOOK.replaceAll("SIZE", "72"));
+
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeBack = (x) => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+
+// ---------- scenes ----------
+const SCENES = [["s1", 0, 3.5], ["s2", 3.5, 6.0], ["s3", 6.0, 10.0], ["s4", 10.0, 14.0], ["s5", 14.0, 18.0], ["s6", 18.0, 99]];
+const CUTS = [3.5, 6.0, 10.0, 14.0, 18.0];
+const WIPE = 0.36; // half-length of a wave wipe
+
+// ---------- wave text ----------
+function splitWave(el) {
+  const walk = (node) => {
+    [...node.childNodes].forEach((child) => {
+      if (child.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        [...child.textContent].forEach((ch) => {
+          const s = document.createElement("span");
+          s.textContent = ch === " " ? " " : ch;
+          s.className = "ch";
+          if (".,!?".includes(ch)) s.style.marginLeft = "-0.07em"; // keep punctuation tight to the word
+          frag.appendChild(s);
+        });
+        child.replaceWith(frag);
+      } else if (child.nodeType === 1) walk(child);
+    });
+  };
+  walk(el);
+  el._chars = [...el.querySelectorAll(".ch")];
+}
+document.querySelectorAll(".wave-line").forEach(splitWave);
+
+function waveIn(el, t, start, stagger = 0.026, dur = 0.5, out = null) {
+  el._chars.forEach((s, i) => {
+    const p = prog(t, start + i * stagger, start + i * stagger + dur);
+    const y = (1 - easeBack(p)) * 70;
+    const r = (1 - p) * 8;
+    let o = easeOut(p);
+    if (out !== null) o *= 1 - prog(t, out, out + 0.25);
+    s.style.transform = `translateY(${y}px) rotate(${r}deg)`;
+    s.style.opacity = o;
+  });
+}
+
+function show(el, t, a, b, from = { x: 0, y: 40, z: 0, ry: 0, rx: 0, s: 1 }, to = { x: 0, y: 0, z: 0, ry: 0, rx: 0, s: 1 }, ease = easeOut) {
+  const p = ease(prog(t, a, b));
+  const v = (k) => lerp(from[k] ?? 0, to[k] ?? 0, p);
+  el.style.transform = `translate3d(${v("x")}px, ${v("y")}px, ${v("z")}px) rotateY(${v("ry")}deg) rotateX(${v("rx")}deg) scale(${lerp(from.s ?? 1, to.s ?? 1, p)})`;
+  el.style.opacity = clamp(prog(t, a, a + (b - a) * 0.6));
+  return p;
+}
+
+// ---------- beat-driven envelope ----------
+function kickEnv(t) {
+  let e = 0;
+  for (const k of BEATS.kicks) if (t >= k) e = Math.max(e, Math.exp(-(t - k) * 5));
+  return e;
+}
+
+// ---------- background waves ----------
+const bg = $("bg").getContext("2d");
+function waveBase(t) {
+  // Baseline height (fraction of H) per scene: tall in hook/outro, low under the product UI
+  const keys = [[0, 0.62], [3.3, 0.62], [3.7, 0.74], [5.8, 0.74], [6.2, 0.9], [17.8, 0.9], [18.2, 0.66], [21, 0.66]];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [a, va] = keys[i], [b, vb] = keys[i + 1];
+    if (t <= b) return lerp(va, vb, easeInOut(prog(t, a, b)));
+  }
+  return 0.66;
+}
+const RIBBONS = [
+  { c: [99, 102, 241], amp: 46, k: 0.0042, sp: 0.9, off: 0, alpha: 0.16 },
+  { c: [124, 58, 237], amp: 60, k: 0.0031, sp: -0.7, off: 1.7, alpha: 0.13 },
+  { c: [16, 185, 129], amp: 38, k: 0.0055, sp: 1.25, off: 3.1, alpha: 0.12 },
+  { c: [129, 140, 248], amp: 28, k: 0.0072, sp: -1.5, off: 4.4, alpha: 0.10 },
+  { c: [52, 211, 153], amp: 22, k: 0.0095, sp: 1.8, off: 0.6, alpha: 0.08 }
+];
+function drawBackground(t) {
+  bg.globalCompositeOperation = "source-over";
+  bg.fillStyle = "#060816";
+  bg.fillRect(0, 0, W, H);
+  const glow = (x, y, r, c, a) => {
+    const g = bg.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(${c},${a})`);
+    g.addColorStop(1, `rgba(${c},0)`);
+    bg.fillStyle = g;
+    bg.fillRect(0, 0, W, H);
+  };
+  glow(260 + Math.sin(t * 0.35) * 80, 140, 900, "79,70,229", 0.34);
+  glow(1250 + Math.cos(t * 0.3) * 120, 520, 760, "124,58,237", 0.18);
+  glow(1700, 1000 + Math.sin(t * 0.4) * 60, 820, "16,185,129", 0.22);
+
+  const base = waveBase(t) * H;
+  const pulse = 1 + kickEnv(t) * 0.55;
+  const intro = clamp(t / 0.6);
+  bg.globalCompositeOperation = "lighter";
+  RIBBONS.forEach((rb, idx) => {
+    const yAt = (x) =>
+      base + idx * 16 +
+      Math.sin(x * rb.k + t * rb.sp * 2 + rb.off) * rb.amp * pulse * intro +
+      Math.sin(x * rb.k * 2.3 - t * rb.sp + rb.off * 2) * rb.amp * 0.35;
+    // filled body
+    const grad = bg.createLinearGradient(0, base - 120, 0, H);
+    grad.addColorStop(0, `rgba(${rb.c},${rb.alpha * 0.9})`);
+    grad.addColorStop(1, `rgba(${rb.c},0)`);
+    bg.beginPath();
+    bg.moveTo(0, H);
+    for (let x = 0; x <= W; x += 12) bg.lineTo(x, yAt(x));
+    bg.lineTo(W, H);
+    bg.closePath();
+    bg.fillStyle = grad;
+    bg.fill();
+    // bright crest line
+    bg.beginPath();
+    for (let x = 0; x <= W; x += 8) (x === 0 ? bg.moveTo(x, yAt(x)) : bg.lineTo(x, yAt(x)));
+    bg.strokeStyle = `rgba(${rb.c},${0.55 + kickEnv(t) * 0.3})`;
+    bg.lineWidth = 2;
+    bg.shadowColor = `rgba(${rb.c},0.9)`;
+    bg.shadowBlur = 18;
+    bg.stroke();
+    bg.shadowBlur = 0;
+  });
+  bg.globalCompositeOperation = "source-over";
+  // vignette
+  const v = bg.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.95);
+  v.addColorStop(0, "rgba(0,0,0,0)");
+  v.addColorStop(1, "rgba(0,0,0,0.45)");
+  bg.fillStyle = v;
+  bg.fillRect(0, 0, W, H);
+}
+
+// ---------- wave wipe transitions ----------
+const wp = $("wipe").getContext("2d");
+function drawWipe(t) {
+  wp.clearRect(0, 0, W, H);
+  const active = CUTS.some((c) => t > c - WIPE && t < c + WIPE);
+  $("wipe").style.display = active ? "block" : "none";
+  for (const c of CUTS) {
+    const p = prog(t, c - WIPE, c + WIPE);
+    if (p <= 0 || p >= 1) continue;
+    const e = easeInOut(p);
+    const layers = [
+      { lag: -0.07, color: "rgba(52,211,153,0.55)", thick: 1.18 },
+      { lag: 0, color: null, thick: 1.32 },
+      { lag: 0.07, color: "rgba(129,140,248,0.6)", thick: 1.18 }
+    ];
+    layers.forEach((L, li) => {
+      const pe = clamp(e + L.lag);
+      const top = H * (1.12 - 2.24 * pe);           // sweeps bottom -> top
+      const bottom = top + H * L.thick;
+      const edge = (x, y0, dir) => y0 + Math.sin(x * 0.006 + t * 9 + li) * 34 * dir + Math.sin(x * 0.013 - t * 6) * 14;
+      wp.beginPath();
+      wp.moveTo(0, edge(0, top, 1));
+      for (let x = 0; x <= W; x += 16) wp.lineTo(x, edge(x, top, 1));
+      for (let x = W; x >= 0; x -= 16) wp.lineTo(x, edge(x, bottom, -1));
+      wp.closePath();
+      if (L.color) {
+        wp.fillStyle = L.color;
+      } else {
+        const g = wp.createLinearGradient(0, top, W, bottom);
+        g.addColorStop(0, "#1e1b4b");
+        g.addColorStop(0.5, "#312e81");
+        g.addColorStop(1, "#0b1324");
+        wp.fillStyle = g;
+      }
+      wp.fill();
+    });
+  }
+}
+
+// ---------- Ava sprite ----------
+const ava = $("ava"), avaCtx = ava.getContext("2d");
+const avaImgs = AVA.frames.map((f) => { const im = new Image(); im.src = "ava/" + f.name; return im; });
+const avaSpan = AVA.frames[AVA.frames.length - 1].t;
+function drawAva(t, x, y, w, opacity = 1, bob = true) {
+  const local = (t % avaSpan);
+  let idx = 0;
+  for (let i = 0; i < AVA.frames.length; i++) if (AVA.frames[i].t <= local) idx = i;
+  avaCtx.clearRect(0, 0, 360, 414);
+  avaCtx.drawImage(avaImgs[idx], 0, 0);
+  ava.style.display = opacity > 0 ? "block" : "none";
+  ava.style.left = x + "px";
+  ava.style.top = (y + (bob ? Math.sin(t * 2.4) * 6 : 0)) + "px";
+  ava.style.width = w + "px";
+  ava.style.height = (w * 414 / 360) + "px";
+  ava.style.opacity = opacity;
+}
+
+// ---------- cursor ----------
+function cursorAt(t, path, clickT) {
+  const cur = $("cursor"), rip = $("ripple");
+  const first = path[0][0], last = path[path.length - 1][0];
+  if (t < first || t > last) { cur.style.display = "none"; rip.style.display = "none"; return; }
+  let x = path[0][1], y = path[0][2];
+  for (let i = 0; i < path.length - 1; i++) {
+    const [ta, xa, ya] = path[i], [tb, xb, yb] = path[i + 1];
+    if (t >= ta && t <= tb) { const p = easeInOut(prog(t, ta, tb)); x = lerp(xa, xb, p); y = lerp(ya, yb, p); }
+  }
+  const fade = Math.min(prog(t, first, first + 0.15), 1 - prog(t, last - 0.2, last));
+  const press = t >= clickT && t < clickT + 0.12 ? 0.86 : 1;
+  cur.style.display = "block";
+  cur.style.left = (x - 6) + "px";
+  cur.style.top = (y - 4) + "px";
+  cur.style.opacity = fade;
+  cur.style.transform = `scale(${press})`;
+  const rp = prog(t, clickT, clickT + 0.45);
+  if (rp > 0 && rp < 1) {
+    rip.style.display = "block";
+    rip.style.left = x + "px";
+    rip.style.top = y + "px";
+    rip.style.transform = `scale(${0.4 + rp * 1.2})`;
+    rip.style.opacity = 1 - rp;
+  } else rip.style.display = "none";
+}
+
+// ---------- render ----------
+function render(t) {
+  drawBackground(t);
+  for (const [id, a, b] of SCENES) $(id).style.display = t >= a && t < b ? "block" : "none";
+  ava.style.display = "none";
+  $("cursor").style.display = "none";
+  $("ripple").style.display = "none";
+
+  if (t < 3.5) {
+    waveIn($("hook1"), t, 0.15);
+    waveIn($("hook2"), t, 0.95, 0.024);
+  } else if (t < 6.0) {
+    const lp = show($("s2logo"), t, 3.6, 4.05, { y: 30, s: 0.6, rx: 30 }, { s: 1 }, easeBack);
+    $("s2logo").style.transform += ` rotate(${(1 - lp) * -12}deg)`;
+    waveIn($("s2name"), t, 3.72, 0.04);
+    waveIn($("s2tagA"), t, 3.95, 0.018, 0.4);
+    waveIn($("s2tagB"), t, 4.15, 0.018, 0.4);
+    const ap = easeBack(prog(t, 3.65, 4.15));
+    drawAva(t, 1180, lerp(1080, 430, ap), 380, clamp(prog(t, 3.65, 3.85)));
+    show($("s2bubble"), t, 4.25, 4.6, { y: 20, s: 0.7 }, { s: 1 }, easeBack);
+  } else if (t < 10.0) {
+    show($("s3chip"), t, 6.05, 6.4, { x: -30 });
+    waveIn($("s3title"), t, 6.12, 0.016, 0.42);
+    show($("s3notes"), t, 6.1, 6.6, { x: -120, z: -200, ry: 28 }, { ry: 12 });
+    // generate click
+    const press = t >= 7.0 && t < 7.16 ? 1 : 0;
+    $("s3press").style.opacity = press;
+    $("s3toastMask").style.opacity = 1 - easeOut(prog(t, 7.15, 7.45));
+    cursorAt(t, [[6.45, 1150, 1040], [6.95, 572, 868], [7.45, 572, 868], [7.9, 760, 1060]], 7.0);
+    ["s3q1", "s3q2", "s3q3", "s3q4"].forEach((id, i) => {
+      const at = 7.5 + i * 0.5;
+      show($(id), t, at - 0.1, at + 0.35, { x: 260, z: -380, ry: -42, s: 0.9 }, { ry: -9 }, easeBack);
+      if (t < at - 0.1) $(id).style.opacity = 0;
+    });
+  } else if (t < 14.0) {
+    show($("s4chip"), t, 10.05, 10.4, { x: -30 });
+    waveIn($("s4title"), t, 10.12, 0.016, 0.42);
+    // setup card: in, rows light up, then out
+    const inP = show($("s4setup"), t, 10.1, 10.55, { y: 60, z: -220, rx: 16 }, { ry: 0 });
+    if (t > 11.95) show($("s4setup"), t, 11.95, 12.3, { x: 0 }, { x: -260, z: -300, ry: 30 });
+    if (t > 11.95) $("s4setup").style.opacity = 1 - prog(t, 11.95, 12.3);
+    $("s4scan").style.top = (((t * 0.9) % 1) * 236) + "px";
+    [10.5, 11.0, 11.5].forEach((at, i) => {
+      const row = $("s4row" + i);
+      const p = prog(t, at, at + 0.5);
+      row.style.opacity = t >= at ? 1 - p * 0.65 : 0;
+      row.style.boxShadow = `0 0 ${30 * (1 - p) + 6}px rgb(16 185 129 / ${0.9 - p * 0.4}), inset 0 0 0 2px rgb(52 211 153 / ${1 - p * 0.5})`;
+    });
+    // exam card
+    const examEl = $("s4exam");
+    if (t < 12.1) { examEl.style.opacity = 0; $("s4rec").style.opacity = 0; }
+    else {
+      show(examEl, t, 12.1, 12.55, { x: 300, z: -300, ry: -30 }, { ry: -4 });
+      show($("s4rec"), t, 12.35, 12.6, { y: -10 });
+      $("s4rec").querySelector("i").style.opacity = 0.55 + 0.45 * Math.abs(Math.sin(t * 4));
+    }
+    cursorAt(t, [[12.45, 1300, 1040], [12.92, 960, 507], [13.6, 960, 507], [13.95, 1100, 700]], 13.0);
+    const sel = $("s4select");
+    sel.style.opacity = t >= 13.0 ? 1 : 0;
+    sel.style.transform = `scale(${t >= 13.0 ? lerp(0.97, 1, easeBack(prog(t, 13.0, 13.25))) : 1})`;
+  } else if (t < 18.0) {
+    show($("s5chip"), t, 14.05, 14.4, { x: -30 });
+    waveIn($("s5title"), t, 14.12, 0.014, 0.42, 16.35);
+    if (t >= 16.5) {
+      waveIn($("s5title2"), t, 16.55, 0.03, 0.45);
+      waveIn($("s5title2b"), t, 16.75, 0.03, 0.45);
+    } else {
+      [$("s5title2"), $("s5title2b")].forEach((el) => el._chars.forEach((c) => (c.style.opacity = 0)));
+    }
+    show($("s5result"), t, 14.15, 14.6, { y: -40, z: -200, rx: -20 }, { rx: 0 });
+    const rp = easeOut(prog(t, 14.45, 15.0));
+    $("s5ring").setAttribute("stroke-dashoffset", 276.46 * (1 - 0.875 * rp));
+    $("s5pct").textContent = Math.round(88 * rp) + "%";
+    // Ava cheers next to her panel
+    const ap = easeBack(prog(t, 14.85, 15.3));
+    drawAva(t, 700, lerp(1080, 580, ap), 360, clamp(prog(t, 14.85, 15.0)));
+    // review panel in, then swap to chat
+    const rv = $("s5review"), ch = $("s5chat");
+    if (t < 16.4) {
+      show(rv, t, 15.0, 15.45, { y: 160, z: -200, ry: -20 }, { ry: -6 }, easeBack);
+      if (t < 15.0) rv.style.opacity = 0;
+      ch.style.opacity = 0;
+    } else {
+      show(rv, t, 16.4, 16.65, { ry: -6 }, { y: 140, z: -250, ry: 18 });
+      rv.style.opacity = 1 - prog(t, 16.4, 16.65);
+      show(ch, t, 16.6, 17.0, { y: 160, z: -200, ry: -20 }, { ry: -6 }, easeBack);
+      if (t < 16.6) ch.style.opacity = 0;
+    }
+  } else {
+    const lp = show($("s6logo"), t, 18.1, 18.5, { y: 30, s: 0.6 }, { s: 1 }, easeBack);
+    waveIn($("s6name"), t, 18.18, 0.035);
+    waveIn($("s6line"), t, 18.45, 0.02, 0.45);
+    show($("s6sub"), t, 18.8, 19.15, { y: 24 });
+    show($("s6url"), t, 19.0, 19.35, { y: 24 });
+    const ap = easeBack(prog(t, 18.05, 18.55));
+    drawAva(t, 430, lerp(1100, 300, ap), 430, clamp(prog(t, 18.05, 18.25)));
+    // gentle fade to black at the very end
+  }
+  drawWipe(t);
+  $("stage").style.opacity = 1 - prog(t, 20.55, 21.0) * 0.85;
+}
+
+window.render = render;
+window.ready = (async () => {
+  await document.fonts.ready;
+  await Promise.all([
+    document.fonts.load('800 100px "Plus Jakarta Sans"'), document.fonts.load('700 50px "Plus Jakarta Sans"'),
+    document.fonts.load('600 20px Inter'), document.fonts.load('500 20px "JetBrains Mono"'),
+    ...[...document.images].map((im) => im.decode().catch(() => {})),
+    ...avaImgs.map((im) => im.decode())
+  ]);
+  render(0);
+  return true;
+})();
+</script>
+</body>
+</html>

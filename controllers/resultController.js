@@ -111,7 +111,8 @@ exports.getStudentResults = (req, res) => {
             a.end_time,
             e.title AS exam_title,
             e.duration_minutes,
-            (SELECT COUNT(*) FROM student_answers WHERE attempt_id = r.attempt_id) as total_questions
+            (SELECT COUNT(*) FROM exam_questions eq WHERE eq.exam_id = r.exam_id) as total_questions,
+            (SELECT COUNT(*) FROM student_answers sa WHERE sa.attempt_id = r.attempt_id) as answered
         FROM result r
         JOIN attempt a ON r.attempt_id = a.attempt_id
         LEFT JOIN examination e ON r.exam_id = e.exam_id

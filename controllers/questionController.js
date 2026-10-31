@@ -12,8 +12,9 @@ const db = require("../config/db");
 // ==========================
 exports.addQuestion = (req, res) => {
 
+    const faculty_user_id = req.user.role === "faculty" ? req.user.user_id : req.body.faculty_user_id;
+
     const {
-        faculty_user_id,
         content,
         difficulty_level,
         subject_topic,
@@ -98,7 +99,8 @@ exports.addQuestion = (req, res) => {
             res.json({
                 success: true,
                 message: "Question added successfully",
-                question_id: result.insertId
+                question_id: result.insertId,
+                data: { question_id: result.insertId }
             });
         }
     );

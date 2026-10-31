@@ -10,13 +10,17 @@ exports.saveAnswer = (req, res) => {
         });
     }
 
+    // The attempt must belong to this student, still be ongoing,
+    // and the question must be part of that attempt's exam
     const scoreSql = `
-        SELECT correct_answer
-        FROM question_bank
-        WHERE question_id = ?
+        SELECT q.correct_answer, a.student_user_id, a.status
+        FROM attempt a
+        JOIN exam_questions eq ON eq.exam_id = a.exam_id
+        JOIN question_bank q ON q.question_id = eq.question_id
+        WHERE a.attempt_id = ? AND q.question_id = ?
     `;
 
-    db.query(scoreSql, [question_id], (scoreErr, scoreRows) => {
+    db.query(scoreSql, [attempt_id, question_id], (scoreErr, scoreRows) => {
         if (scoreErr) {
             return res.status(500).json({
                 success: false,
@@ -27,7 +31,21 @@ exports.saveAnswer = (req, res) => {
         if (scoreRows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "Question not found"
+                message: "Question not found in this exam"
+            });
+        }
+
+        if (Number(scoreRows[0].student_user_id) !== Number(req.user.user_id)) {
+            return res.status(403).json({
+                success: false,
+                message: "This attempt does not belong to you"
+            });
+        }
+
+        if (scoreRows[0].status !== "ONGOING") {
+            return res.status(409).json({
+                success: false,
+                message: "This exam has already been submitted"
             });
         }
 
@@ -88,8 +106,8 @@ exports.saveAnswer = (req, res) => {
 
                 res.json({
                     success: true,
-                    message: "Answer saved",
-                    is_correct: isCorrect
+                    // Correctness is never revealed while the exam is in progress
+                    message: "Answer saved"
                 });
             });
         });

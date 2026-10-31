@@ -3,12 +3,9 @@ const db = require("../config/db");
 // CREATE EXAM
 exports.createExam = (req, res) => {
 
-    const {
-        title,
-        duration_minutes,
-        scheduled_time,
-        faculty_user_id
-    } = req.body;
+    const { title, duration_minutes, scheduled_time } = req.body;
+    // Faculty always create exams under their own account; admins may specify an owner
+    const faculty_user_id = req.user.role === "faculty" ? req.user.user_id : req.body.faculty_user_id;
 
     if (!title || !duration_minutes || !scheduled_time || !faculty_user_id) {
         return res.status(400).json({
@@ -38,7 +35,8 @@ exports.createExam = (req, res) => {
             res.json({
                 success: true,
                 message: "Exam created successfully",
-                exam_id: result.insertId
+                exam_id: result.insertId,
+                data: { exam_id: result.insertId }
             });
         }
     );

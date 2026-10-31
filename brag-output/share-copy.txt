@@ -1,0 +1,3 @@
+Paste your notes, get a proctored exam. OES Pro turns study notes into MCQs, runs the test with camera + tab-switch proctoring, grades it the second you submit — and Ava, a 3D study buddy, reviews your result and answers your doubts.
+
+Open source (React · Node · MySQL): github.com/codewithtej1220/Online-Examination-System

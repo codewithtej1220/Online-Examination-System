@@ -176,9 +176,12 @@ Dbms_OES/
 
 | Role | Username | Password |
 |------|----------|----------|
-| Admin | `admin1` | `password123` |
-| Faculty | `faculty1` | `password123` |
-| Student | `student1` | `password123` |
+| Faculty | `faculty_algorithms` | `Password@123` |
+| Faculty | `faculty_database` | `Password@123` |
+| Student | `student_aarav` | `Password@123` |
+| Student | `student_ananya` | `Password@123` |
+
+**Note:** Run `node scripts/seed.js` to populate the database with demo users and sample data.
 
 ---
 

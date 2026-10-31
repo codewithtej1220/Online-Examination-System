@@ -12,70 +12,67 @@ const { asyncHandler } = require("../middleware/errorHandler");
  */
 exports.register = asyncHandler(async (req, res) => {
     const { username, password, role, current_semester, major_program, department, email } = req.body;
+    const pool = db.promise;
 
-    // Check if user already exists
-    const checkSql = "SELECT user_id FROM users WHERE username = ?";
-    db.query(checkSql, [username], async (err, results) => {
-        if (err) {
-            logger.error("Database error during registration:", err);
-            throw new Error("Database error");
+    // Admin accounts cannot be self-created, except to bootstrap the very first admin
+    if (role === "admin") {
+        const [[{ adminCount }]] = await pool.query("SELECT COUNT(*) AS adminCount FROM users WHERE role = 'admin'");
+        if (adminCount > 0) {
+            logger.warn(`Blocked self-registration as admin for username: ${username}`);
+            return ApiResponse.forbidden(res, "Admin accounts can only be created by an existing administrator");
         }
+    }
 
-        if (results.length > 0) {
+    const [existing] = await pool.query("SELECT user_id FROM users WHERE username = ?", [username]);
+    if (existing.length > 0) {
+        return ApiResponse.error(res, "Username already exists", 409);
+    }
+
+    // Hash password with salt rounds from env or default to 12
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const roleInserts = {
+        faculty: ["INSERT INTO faculty (user_id, department) VALUES (?, ?)", (id) => [id, department || "General"]],
+        student: ["INSERT INTO student (user_id, current_semester, major_program) VALUES (?, ?, ?)", (id) => [id, current_semester || null, major_program || null]],
+        admin: ["INSERT INTO admin (user_id, email) VALUES (?, ?)", (id) => [id, email || `${username}@admin.oes.com`]]
+    };
+    const [roleSql, roleParams] = roleInserts[role];
+
+    // Create the user and the role row atomically
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        const [result] = await connection.query(
+            "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+            [username, hashedPassword, role]
+        );
+        const userId = result.insertId;
+        await connection.query(roleSql, roleParams(userId));
+        await connection.commit();
+
+        logger.info(`New user registered: ${username} (${role})`);
+
+        return ApiResponse.success(
+            res,
+            {
+                user_id: userId,
+                username,
+                role
+            },
+            "User registered successfully",
+            201
+        );
+    } catch (err) {
+        await connection.rollback();
+        if (err.code === "ER_DUP_ENTRY") {
             return ApiResponse.error(res, "Username already exists", 409);
         }
-
-        // Hash password with salt rounds from env or default to 12
-        const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-        const sql = `INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)`;
-
-        db.query(sql, [username, hashedPassword, role], (err, result) => {
-            if (err) {
-                logger.error("Error creating user:", err);
-                return ApiResponse.error(res, "Failed to create user", 500);
-            }
-
-            const userId = result.insertId;
-            let roleSql;
-            let roleParams;
-
-            // Insert role-specific data
-            if (role === "faculty") {
-                roleSql = "INSERT INTO faculty (user_id, department) VALUES (?, ?)";
-                roleParams = [userId, department || "General"];
-            } else if (role === "student") {
-                roleSql = "INSERT INTO student (user_id, current_semester, major_program) VALUES (?, ?, ?)";
-                roleParams = [userId, current_semester || null, major_program || null];
-            } else if (role === "admin") {
-                roleSql = "INSERT INTO admin (user_id, email) VALUES (?, ?)";
-                roleParams = [userId, email || `${username}@admin.oes.com`];
-            }
-
-            db.query(roleSql, roleParams, (roleErr) => {
-                if (roleErr) {
-                    logger.error("Error creating role-specific data:", roleErr);
-                    // Rollback user creation
-                    db.query("DELETE FROM users WHERE user_id = ?", [userId]);
-                    return ApiResponse.error(res, "Failed to complete registration", 500);
-                }
-
-                logger.info(`New user registered: ${username} (${role})`);
-
-                return ApiResponse.success(
-                    res,
-                    {
-                        user_id: userId,
-                        username,
-                        role
-                    },
-                    "User registered successfully",
-                    201
-                );
-            });
-        });
-    });
+        logger.error("Error creating user:", err);
+        return ApiResponse.error(res, "Failed to complete registration", 500);
+    } finally {
+        connection.release();
+    }
 });
 
 /**
@@ -86,53 +83,46 @@ exports.register = asyncHandler(async (req, res) => {
 exports.login = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
-    const sql = "SELECT * FROM users WHERE username = ?";
+    const [results] = await db.promise.query("SELECT * FROM users WHERE username = ?", [username]);
 
-    db.query(sql, [username], async (err, results) => {
-        if (err) {
-            logger.error("Database error during login:", err);
-            return ApiResponse.error(res, "Database error", 500);
-        }
+    if (results.length === 0) {
+        logger.warn(`Login attempt for non-existent user: ${username}`);
+        return ApiResponse.error(res, "Invalid username or password", 401);
+    }
 
-        if (results.length === 0) {
-            logger.warn(`Login attempt for non-existent user: ${username}`);
-            return ApiResponse.error(res, "Invalid username or password", 401);
-        }
+    const user = results[0];
+    const isMatch = await bcrypt.compare(password, user.password_hash);
 
-        const user = results[0];
-        const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+        logger.warn(`Failed login attempt for user: ${username}`);
+        return ApiResponse.error(res, "Invalid username or password", 401);
+    }
 
-        if (!isMatch) {
-            logger.warn(`Failed login attempt for user: ${username}`);
-            return ApiResponse.error(res, "Invalid username or password", 401);
-        }
+    // Generate JWT with expiration
+    const token = jwt.sign(
+        {
+            user_id: user.user_id,
+            username: user.username,
+            role: user.role
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || "24h" }
+    );
 
-        // Generate JWT with expiration
-        const token = jwt.sign(
-            {
+    logger.info(`User logged in: ${username} (${user.role})`);
+
+    return ApiResponse.success(
+        res,
+        {
+            token,
+            user: {
                 user_id: user.user_id,
                 username: user.username,
                 role: user.role
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || "24h" }
-        );
-
-        logger.info(`User logged in: ${username} (${user.role})`);
-
-        return ApiResponse.success(
-            res,
-            {
-                token,
-                user: {
-                    user_id: user.user_id,
-                    username: user.username,
-                    role: user.role
-                }
-            },
-            "Login successful"
-        );
-    });
+            }
+        },
+        "Login successful"
+    );
 });
 
 /**

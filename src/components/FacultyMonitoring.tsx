@@ -60,7 +60,7 @@ export default function FacultyMonitoring({ examId, facultyId }: FacultyMonitori
 
   // Initialize Socket.io connection
   useEffect(() => {
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io({
       transports: ['websocket'],
       reconnection: true
     });

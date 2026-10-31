@@ -11,9 +11,10 @@ exports.submitExam = (req, res) => {
     }
 
     const checkSql = `
-        SELECT status, exam_id
-        FROM attempt
-        WHERE attempt_id = ?
+        SELECT a.status, a.exam_id, a.student_user_id,
+               (SELECT COUNT(*) FROM exam_questions eq WHERE eq.exam_id = a.exam_id) AS exam_question_count
+        FROM attempt a
+        WHERE a.attempt_id = ?
     `;
 
     db.query(checkSql, [attempt_id], (err, rows) => {
@@ -31,16 +32,21 @@ exports.submitExam = (req, res) => {
             });
         }
 
+        if (Number(rows[0].student_user_id) !== Number(req.user.user_id)) {
+            return res.status(403).json({
+                success: false,
+                message: "This attempt does not belong to you"
+            });
+        }
+
         const examId = rows[0].exam_id;
+        // Score out of every question in the exam, not just the answered ones
+        const totalQuestions = Number(rows[0].exam_question_count) || 0;
 
         if (rows[0].status === "SUBMITTED") {
             return db.query(
-                `SELECT 
-                    r.*,
-                    (SELECT COUNT(*) FROM student_answers WHERE attempt_id = ?) as total_questions
-                FROM result r 
-                WHERE r.attempt_id = ?`,
-                [attempt_id, attempt_id],
+                `SELECT r.* FROM result r WHERE r.attempt_id = ?`,
+                [attempt_id],
                 (resultErr, resultRows) => {
                     if (resultErr) {
                         return res.status(500).json({
@@ -60,7 +66,7 @@ exports.submitExam = (req, res) => {
                         success: true,
                         message: "Exam already submitted",
                         score: resultRows[0].total_marks,
-                        total_questions: resultRows[0].total_questions,
+                        total_questions: totalQuestions,
                         result: resultRows[0]
                     });
                 }
@@ -82,13 +88,6 @@ exports.submitExam = (req, res) => {
                 return res.status(500).json({
                     success: false,
                     error: err2.message
-                });
-            }
-
-            if (answers.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "No answers found"
                 });
             }
 
@@ -139,7 +138,8 @@ exports.submitExam = (req, res) => {
                         success: true,
                         message: "Exam evaluated successfully",
                         score,
-                        total_questions: answers.length
+                        total_questions: totalQuestions,
+                        answered: answers.length
                     });
                 });
             });

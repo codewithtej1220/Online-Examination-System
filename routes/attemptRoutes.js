@@ -7,12 +7,17 @@ require("../controllers/attemptController");
 const evaluationController =
 require("../controllers/evaluationController");
 
+const { verifyToken, requireRole } = require("../middleware/authMiddleware");
+
+router.use(verifyToken);
+
 
 // ==========================
 // START EXAM
 // ==========================
 router.post(
     "/start",
+    requireRole("student"),
     attemptController.startExam
 );
 
@@ -22,6 +27,7 @@ router.post(
 // ==========================
 router.post(
     "/submit",
+    requireRole("student"),
     evaluationController.submitExam
 );
 
@@ -31,6 +37,7 @@ router.post(
 // ==========================
 router.get(
     "/all",
+    requireRole("faculty", "admin"),
     attemptController.getAttempts
 );
 

@@ -78,7 +78,8 @@ export default function Calculator({ onClose, className }: CalculatorProps) {
           result = tan(value * (pi / 180));
           break;
         case 'sqrt':
-          result = sqrt(value);
+          // sqrt of a negative number is complex; show it as an invalid result
+          result = value < 0 ? NaN : (sqrt(value) as number);
           break;
         case 'square':
           result = value * value;

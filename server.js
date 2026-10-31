@@ -25,6 +25,9 @@ const studentExamViewRoutes = require("./routes/studentExamViewRoutes");
 const studentAnswerRoutes = require("./routes/studentAnswerRoutes");
 const proctoringRoutes = require("./routes/proctoringRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const generatorRoutes = require("./routes/generatorRoutes");
+const assistantRoutes = require("./routes/assistantRoutes");
 
 const app = express();
 
@@ -98,8 +101,21 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-// Database tables endpoint
-app.get("/api/tables", (req, res) => {
+// Read-only SQL guard for the admin console: one statement, read verbs only
+const READ_ONLY_START = /^\s*(SELECT|SHOW|DESCRIBE|DESC|EXPLAIN|WITH)\b/i;
+const FORBIDDEN_SQL = /\b(INTO\s+(OUT|DUMP)FILE|LOAD_FILE|SLEEP|BENCHMARK|FOR\s+UPDATE|LOCK\s+IN|DROP|TRUNCATE|DELETE|UPDATE|ALTER|CREATE|INSERT|REPLACE|GRANT|REVOKE|SET)\b/i;
+
+function redactSecrets(rows) {
+    if (!Array.isArray(rows)) return rows;
+    return rows.map((row) => {
+        if (!row || typeof row !== "object" || !("password_hash" in row)) return row;
+        const { password_hash, ...rest } = row;
+        return { ...rest, password_hash: "[redacted]" };
+    });
+}
+
+// Database tables endpoint (admin only)
+app.get("/api/tables", verifyToken, requireRole('admin'), (req, res) => {
     db.query("SHOW TABLES", (err, rows) => {
         if (err) {
             logger.error("Failed to fetch tables:", err);
@@ -113,54 +129,31 @@ app.get("/api/tables", (req, res) => {
     });
 });
 
-// SQL Query endpoint - RESTRICTED TO ADMIN ONLY IN PRODUCTION
-if (process.env.NODE_ENV !== 'production') {
-    // Development: Allow with rate limiting
-    app.post("/api/query", queryLimiter, (req, res) => {
-        const { sql } = req.body;
+// SQL console endpoint - admin only, read-only, in every environment
+app.post("/api/query", verifyToken, requireRole('admin'), queryLimiter, (req, res) => {
+    const { sql } = req.body;
 
-        if (!sql || typeof sql !== "string") {
-            return ApiResponse.error(res, "SQL query is required", 400);
+    if (!sql || typeof sql !== "string") {
+        return ApiResponse.error(res, "SQL query is required", 400);
+    }
+
+    const statement = sql.trim().replace(/;\s*$/, "");
+    if (statement.includes(";") || !READ_ONLY_START.test(statement) || FORBIDDEN_SQL.test(statement)) {
+        logger.warn(`Rejected non read-only SQL from admin ${req.user.user_id}: ${sql}`);
+        return ApiResponse.error(res, "Only single read-only queries (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed", 403);
+    }
+
+    logger.info(`Admin query by user ${req.user.user_id}: ${statement}`);
+
+    db.query(statement, (err, rows) => {
+        if (err) {
+            logger.error("Query execution failed:", err);
+            return ApiResponse.error(res, err.message, 400);
         }
 
-        // Prevent dangerous operations
-        const dangerous = /\b(DROP|TRUNCATE|DELETE|UPDATE|ALTER|CREATE|INSERT)\b/i;
-        if (dangerous.test(sql)) {
-            logger.warn(`Dangerous SQL query attempted: ${sql}`);
-            return ApiResponse.error(res, "Dangerous operations are not allowed", 403);
-        }
-
-        db.query(sql, (err, rows) => {
-            if (err) {
-                logger.error("Query execution failed:", err);
-                return ApiResponse.error(res, err.message, 500);
-            }
-
-            return ApiResponse.success(res, { rows });
-        });
+        return ApiResponse.success(res, { rows: redactSecrets(rows) });
     });
-} else {
-    // Production: Admin only or disable completely
-    app.post("/api/query", verifyToken, requireRole('admin'), queryLimiter, (req, res) => {
-        const { sql } = req.body;
-
-        if (!sql || typeof sql !== "string") {
-            return ApiResponse.error(res, "SQL query is required", 400);
-        }
-
-        // Log admin queries
-        logger.info(`Admin query by user ${req.user.user_id}: ${sql}`);
-
-        db.query(sql, (err, rows) => {
-            if (err) {
-                logger.error("Query execution failed:", err);
-                return ApiResponse.error(res, err.message, 500);
-            }
-
-            return ApiResponse.success(res, { rows });
-        });
-    });
-}
+});
 
 // API Routes
 app.use("/api/auth", authRoutes);
@@ -174,6 +167,9 @@ app.use("/api/student-exam", studentExamViewRoutes);
 app.use("/api/student-answers", studentAnswerRoutes);
 app.use("/api/proctoring", proctoringRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/generator", generatorRoutes);
+app.use("/api/assistant", assistantRoutes);
 
 // 404 handler - must be after all routes
 app.use(notFoundHandler);

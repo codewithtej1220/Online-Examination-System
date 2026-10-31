@@ -65,7 +65,7 @@ export default function ProctoredExam({
 
   // Initialize Socket.io connection
   useEffect(() => {
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io({
       transports: ['websocket'],
       reconnection: true
     });
@@ -147,14 +147,12 @@ export default function ProctoredExam({
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
-        // Wait for video to be ready
+        // Wait for video to be ready (metadata may already be loaded; never wait forever)
+        const video = videoRef.current;
         await new Promise<void>((resolve) => {
-          if (videoRef.current) {
-            videoRef.current.onloadedmetadata = () => {
-              console.log('✅ Video metadata loaded');
-              resolve();
-            };
-          }
+          if (video.readyState >= 1) return resolve();
+          video.onloadedmetadata = () => resolve();
+          setTimeout(resolve, 3000);
         });
         
         setCameraEnabled(true);
@@ -303,17 +301,18 @@ export default function ProctoredExam({
         if (!blob) return;
 
         // Create FormData for upload
+        // Text fields must precede the file so the server sees them while storing it
         const formData = new FormData();
-        formData.append('video', blob, `exam_${examId}_student_${studentId}_${attemptId}.webm`);
         formData.append('examId', examId.toString());
-        formData.append('studentId', studentId.toString());
         formData.append('attemptId', attemptId.toString());
         formData.append('sessionId', sessionId || '');
+        formData.append('video', blob, `exam_${examId}_student_${studentId}_${attemptId}.webm`);
 
         // Upload to backend
         try {
-          const response = await fetch('http://localhost:5000/api/proctoring/upload-recording', {
+          const response = await fetch('/api/proctoring/upload-recording', {
             method: 'POST',
+            headers: { Authorization: `Bearer ${localStorage.getItem('oesToken') ?? ''}` },
             body: formData
           });
 
@@ -493,6 +492,13 @@ export default function ProctoredExam({
     return () => document.removeEventListener('contextmenu', handleContextMenu);
   }, [examStarted]);
 
+  // The in-exam layout renders its own <video>; give it the live stream
+  useEffect(() => {
+    if (examStarted && videoRef.current && streamRef.current && videoRef.current.srcObject !== streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [examStarted]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -520,20 +526,19 @@ export default function ProctoredExam({
               {/* Camera Preview */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-slate-950">
+                  {/* The video element must always exist: enableCamera attaches the stream to it before cameraEnabled flips */}
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={cn("h-full w-full object-cover", !cameraEnabled && "hidden")}
+                  />
                   {cameraEnabled ? (
-                    <>
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="h-full w-full object-cover"
-                      />
-                      <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-emerald-500 px-2 py-1 text-xs font-medium text-white">
-                        <div className="h-2 w-2 animate-pulse rounded-full bg-white" />
-                        Live
-                      </div>
-                    </>
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-emerald-500 px-2 py-1 text-xs font-medium text-white">
+                      <div className="h-2 w-2 animate-pulse rounded-full bg-white" />
+                      Live
+                    </div>
                   ) : (
                     <div className="flex h-full items-center justify-center">
                       <CameraOff className="h-12 w-12 text-muted-foreground" />
@@ -757,8 +762,8 @@ export default function ProctoredExam({
                   Start Proctored Exam
                 </Button>
 
-                {/* Testing Mode: Skip Proctoring */}
-                <Button
+                {/* Testing Mode: Skip Proctoring (dev builds only) */}
+                {import.meta.env.DEV && <Button
                   onClick={() => {
                     // Skip camera setup and start exam directly
                     setExamStarted(true);
@@ -770,7 +775,7 @@ export default function ProctoredExam({
                 >
                   <AlertTriangle className="h-5 w-5" />
                   Skip Proctoring (Testing Mode)
-                </Button>
+                </Button>}
               </div>
             </CardContent>
           </Card>
